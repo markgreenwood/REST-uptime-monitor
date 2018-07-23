@@ -93,14 +93,14 @@ const unifiedServer = function(req, res) {
 
 // Define the handlers
 const handlers = {
-  sample: (data, callback) => {
-    callback(406, { name: 'sample handler' });
-  },
   notFound: (data, callback) => {
     callback(404);
+  },
+  ping: (data, callback) => {
+    callback(200);
   }
 };
 
 const router = {
-  sample: handlers.sample
+  ping: handlers.ping
 };
