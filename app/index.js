@@ -67,6 +67,7 @@ const unifiedServer = function(req, res) {
     buffer += decoder.end();
 
     const chosenHandler = typeof(router[trimmedPath]) !== 'undefined' ? router[trimmedPath] : handlers.notFound;
+    console.log('chosenHandler: ', chosenHandler);
 
     const data = {
       trimmedPath,
@@ -75,6 +76,8 @@ const unifiedServer = function(req, res) {
       headers,
       payload: helpers.parseJsonToObject(buffer)
     };
+
+    console.log('data in index.js: ', data);
 
     chosenHandler(data, (statusCode, payload) => {
       statusCode = typeof(statusCode) === 'number' ? statusCode : 404;
