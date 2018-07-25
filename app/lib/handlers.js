@@ -183,5 +183,72 @@ handlers._users.delete = function(data, callback) {
   }
 };
 
+handlers.tokens = function(data, callback) {
+  const acceptableMethods = ['post', 'get', 'put', 'delete'];
+  console.log('data in handlers.tokens: ', data);
+  if (acceptableMethods.indexOf(data.method) > -1) {
+    handlers._tokens[data.method](data, callback);
+  } else {
+    callback(405);
+  }
+};
+
+handlers._tokens = {};
+
+// Tokens - post
+// Required data: phone, password
+// Optional data: none
+handlers._tokens.post = function(data, callback) {
+  const phone = (typeof(data.payload.phone) == 'string' && data.payload.phone.trim().length == 10) ? data.payload.phone.trim() : false;
+  const password = (typeof(data.payload.password) == 'string' && data.payload.password.trim().length > 0) ? data.payload.password.trim() : false;
+
+  if (phone && password) {
+    // Lookup the user who matches that phone number
+    _data.read('users', phone, function(err, userData) {
+      if (!err && userData) {
+        // Hash the sent password and compare to password stored in user object
+        const hashedPassword = helpers.hash(password);
+        if (hashedPassword == userData.hashedPassword) {
+          // Create a new token with random name, set expiration 1 hr in the future
+          const tokenId = helpers.createRandomString(20);
+          const expires = Date.now() + (1000 * 60 * 60);
+          const tokenObject = {
+            phone,
+            id: tokenId,
+            expires
+          };
+
+          // Store the token
+          _data.create('tokens', tokenId, tokenObject, function(err) {
+            if (!err) {
+              callback(200, tokenObject);
+            } else {
+              callback(500, { Error: 'Could not create new token' });
+            }
+          });
+        } else {
+          callback(400, { Error: 'Password did not match specified user\'s stored password' })
+        }
+      } else {
+        callback(400, { Error: 'Could not find the specified user' });
+      }
+    });
+  } else {
+    callback(400, { Error: 'Missing required fields' });
+  }
+};
+
+handlers._tokens.get = function(data, callback) {
+
+};
+
+handlers._tokens.put = function(data, callback) {
+
+};
+
+handlers._tokens.delete = function(data, callback) {
+
+};
+
 // Export the module
 module.exports = handlers;
