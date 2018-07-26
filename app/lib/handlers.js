@@ -85,7 +85,6 @@ handlers._users.post = function(data, callback) {
 // Optional data: none
 // TODO: Only let authenticated users access their own objects; don't let them access others'
 handlers._users.get = function(data, callback) {
-  console.log('data in users get :', data);
   // Check that phone is valid
   const phone = (typeof(data.queryStringObject.phone) == 'string' && data.queryStringObject.phone.trim().length == 10) ? data.queryStringObject.phone.trim() : false;
   if (phone) {
@@ -238,8 +237,23 @@ handlers._tokens.post = function(data, callback) {
   }
 };
 
+// Tokens - get
+// Required: id
+// Optional: none
 handlers._tokens.get = function(data, callback) {
-
+  const id = (typeof(data.queryStringObject.id) == 'string' && data.queryStringObject.id.trim().length == 20) ? data.queryStringObject.id.trim() : false;
+  if (id) {
+    // Lookup the user
+    _data.read('tokens', id, function(err, tokenData) {
+      if (!err && tokenData) {
+        callback(200, tokenData);
+      } else {
+        callback(404);
+      }
+    });
+  } else {
+    callback(400, {Error: 'Missing required field'});
+  }
 };
 
 handlers._tokens.put = function(data, callback) {
