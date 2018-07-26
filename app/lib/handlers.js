@@ -256,6 +256,9 @@ handlers._tokens.get = function(data, callback) {
   }
 };
 
+// Tokens - put
+// Required data: id, extend
+// Optional data: none
 handlers._tokens.put = function(data, callback) {
 
 };
