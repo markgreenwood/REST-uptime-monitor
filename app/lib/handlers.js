@@ -88,16 +88,26 @@ handlers._users.get = function(data, callback) {
   // Check that phone is valid
   const phone = (typeof(data.queryStringObject.phone) == 'string' && data.queryStringObject.phone.trim().length == 10) ? data.queryStringObject.phone.trim() : false;
   if (phone) {
-    // Lookup the user
-    _data.read('users', phone, function(err, data) {
-      if (!err && data) {
-        // Remove the hashed password from the user object before returning it
-        delete data.hashedPassword;
-        callback(200, data);
+    // Get token from headers
+    const token = typeof(data.headers.token) == 'string' ? data.headers.token : false;
+
+    // Verify that token from headers is valid for phone
+    handlers._tokens.verifyToken(token, phone, function(tokenIsValid) {
+      if (tokenIsValid) {
+        // Lookup the user
+        _data.read('users', phone, function(err, data) {
+          if (!err && data) {
+            // Remove the hashed password from the user object before returning it
+            delete data.hashedPassword;
+            callback(200, data);
+          } else {
+            callback(404);
+          }
+        });
       } else {
-        callback(404);
+        callback(403, { Error: 'Missing required token in header or token is invalid' });
       }
-    });
+    })
   } else {
     callback(400, { Error: 'Missing required field' });
   }
@@ -260,12 +270,79 @@ handlers._tokens.get = function(data, callback) {
 // Required data: id, extend
 // Optional data: none
 handlers._tokens.put = function(data, callback) {
+  const id = (typeof(data.payload.id) == 'string' && data.payload.id.trim().length == 20) ? data.payload.id.trim() : false;
+  const extend = (typeof(data.payload.extend) == 'boolean' && data.payload.extend == true) ? true : false;
+  if (id && extend) {
+    _data.read('tokens', id, function(err, tokenData) {
+      if (!err && tokenData) {
+        // Check to make sure the token isn't already expired
+        if (tokenData.expires > Date.now()) {
+          // Set expiration an hour from now
+          tokenData.expires = Date.now() + (1000 * 60 * 60);
 
+          // Store the new updates
+          _data.update('tokens', id, tokenData, function(err) {
+            if (!err) {
+              callback(200);
+            } else {
+              callback(500, { Error: 'Could not update token\'s expiration' });
+            }
+          })
+        } else {
+          callback(400, { Error: 'The token has already expired and cannot be extended' });
+        }
+      } else {
+        callback(400, { Error: 'Specified token does not exist' });
+      }
+    })
+  } else {
+    callback(400, { Error: 'Missing required field(s) or field(s) are invalid' });
+  }
 };
 
+// Token - delete
+// Required data: id
+// Optional data: none
 handlers._tokens.delete = function(data, callback) {
+  // Check that phone is valid
+  const id = (typeof(data.queryStringObject.id) == 'string' && data.queryStringObject.id.trim().length == 20) ? data.queryStringObject.id.trim() : false;
+
+  if (id) {
+    _data.read('tokens', id, function(err, data) {
+      if (!err && data) {
+        _data.delete('tokens', id, function(err) {
+          if (!err) {
+            callback(200);
+          } else {
+            callback(500, { Error: 'Could not delete the specified token' });
+          }
+        });
+      } else {
+        callback(400, { Error: 'Could not find the specified token' });
+      }
+    });
+  } else {
+    callback(400, { Error: 'Missing required field' });
+  }
 
 };
+
+// Verify if a given token id is currently valid for a given user
+handlers._tokens.verifyToken = function(id, phone, callback) {
+  // Lookup the token
+  _data.read('tokens', id, function(err, tokenData) {
+    if (!err && tokenData) {
+      // Check that token is for the given user and has not expired
+      if (tokenData.phone == phone && tokenData.expires > Date.now()) {
+        callback(true);
+      } else {
+        callback(false);
+      }
+    } else {
+      callback(false);
+    }
+  })
+}
 
 // Export the module
 module.exports = handlers;
