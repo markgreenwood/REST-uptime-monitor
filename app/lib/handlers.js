@@ -5,6 +5,7 @@
 // Dependencies
 const _data = require('./data');
 const helpers = require('./helpers');
+const config = require('./config');
 
 // Define the handlers
 const handlers = {};
@@ -359,6 +360,89 @@ handlers._tokens.verifyToken = function(id, phone, callback) {
       callback(false);
     }
   })
+}
+
+handlers.checks = function(data, callback) {
+  const acceptableMethods = ['post', 'get', 'put', 'delete'];
+  console.log('data in handlers.checks: ', data);
+  if (acceptableMethods.indexOf(data.method) > -1) {
+    handlers._checks[data.method](data, callback);
+  } else {
+    callback(405);
+  }
+};
+
+handlers._checks = {};
+
+// Checks - post
+// Required data: protocol, url, method, successCodes, timeoutSeconds
+// Optional data: none
+handlers._checks.post = function(data, callback) {
+  // Validate inputs
+  const protocol = (typeof(data.payload.protocol) == 'string' && ['https', 'http'].indexOf(data.payload.protocol) > -1) ? data.payload.protocol : false;
+  const url = (typeof(data.payload.url) == 'string' && data.payload.url.trim().length > 0) ? data.payload.url.trim() : false;
+  const method = (typeof(data.payload.method) == 'string' && ['post', 'get', 'put', 'delete'].indexOf(data.payload.method) > -1) ? data.payload.method : false;
+  const successCodes = (typeof(data.payload.successCodes) == 'object' && data.payload.successCodes instanceof Array && data.payload.successCodes.length > 0) ? data.payload.successCodes : false;
+  const timeoutSeconds = (typeof(data.payload.timeoutSeconds) == 'number' && data.payload.timeoutSeconds % 1 === 0 && data.payload.timeoutSeconds >= 1 && data.payload.timeoutSeconds <= 5) ? data.payload.timeoutSeconds : false;
+
+  if (protocol && url && method && successCodes && timeoutSeconds) {
+    // Check that user provided token, look up user with token
+    // Get token from headers
+    const token = typeof(data.headers.token) == 'string' ? data.headers.token : false;
+    _data.read('tokens', token, function(err, tokenData) {
+      if (!err && tokenData) {
+        // Get user's phone
+        const userPhone = tokenData.phone;
+        _data.read('users', userPhone, function(err, userData) {
+          if (!err && userData) {
+            // Identify which checks user already has
+            const userChecks = typeof(userData.checks) == 'object' && userData.checks instanceof Array ? userData.checks : [];
+            // Verify user has < max number of checks per user
+            if (userChecks.length < config.maxChecks) {
+              // Create a random id for the check
+              const checkId = helpers.createRandomString(20);
+              // Create the check object, and include the user's phone
+              const checkObject = {
+                id: checkId,
+                userPhone,
+                protocol,
+                url,
+                method,
+                successCodes,
+                timeoutSeconds
+              };
+              _data.create('checks', checkId, checkObject, function(err) {
+                if (!err) {
+                  // Add the checkId to the user's object
+                  userData.checks = userChecks;
+                  userData.checks.push(checkId);
+
+                  // Save the new user data
+                  _data.update('users', userPhone, userData, function(err) {
+                    if (!err) {
+                      callback(200, checkObject);
+                    } else {
+                      callback(500, { Error: 'Could not update the user with the new check' });
+                    }
+                  });
+                } else {
+                  callback(500, { Error: 'Could not create the new check' });
+                }
+              })
+            } else {
+              callback(400, { Error: 'User already has max number of checks (' + config.maxChecks + ')' });
+            }
+          } else {
+            callback(403);
+          }
+        })
+      } else {
+        callback(403);
+      }
+    });
+  } else {
+    callback(400, { Error: 'Missing required inputs or inputs are invalid' });
+  }
 }
 
 // Export the module
