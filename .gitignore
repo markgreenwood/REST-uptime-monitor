@@ -1,2 +1,13 @@
+# IDE and fs crap
 .idea
 .DS_Store
+
+# Configs
+local.yml
+
+# Keys and secret stuff
+https
+
+# Data
+.data
+.logs

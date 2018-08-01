@@ -9,6 +9,9 @@ const url = require('url');
 const fs = require('fs');
 const StringDecoder = require('string_decoder').StringDecoder;
 const path = require('path');
+const util = require('util');
+const debug = util.debuglog('server');
+
 const config = require('./config');
 const handlers = require('./handlers');
 const helpers = require('./helpers');
@@ -61,7 +64,7 @@ server.unifiedServer = function(req, res) {
     buffer += decoder.end();
 
     const chosenHandler = typeof(server.router[trimmedPath]) !== 'undefined' ? server.router[trimmedPath] : handlers.notFound;
-    console.log('chosenHandler: ', chosenHandler);
+    debug('chosenHandler: ', chosenHandler);
 
     const data = {
       trimmedPath,
@@ -83,7 +86,11 @@ server.unifiedServer = function(req, res) {
       res.end(payloadString);
 
       // Log the path requested
-      console.log('Returning this response: ', statusCode, payloadString);
+      if (statusCode === 200) {
+        debug('\x1b[32m%s\x1b[0m', method.toUpperCase() + ' /' + trimmedPath + ' ' + statusCode);
+      } else {
+        debug('\x1b[31m%s\x1b[0m', method.toUpperCase() + ' /' + trimmedPath + ' ' + statusCode);
+      }
     });
   });
 };
@@ -100,12 +107,12 @@ server.router = {
 server.init = function() {
   // Start the http server
   server.httpServer.listen(config.httpPort, () => {
-    console.log('The server is listening on port ' + config.httpPort);
+    console.log('\x1b[36m%s\x1b[0m', 'The server is listening on port ' + config.httpPort);
   });
 
   // Start the https server
   server.httpsServer.listen(config.httpsPort, () => {
-    console.log('The server is listening on port ' + config.httpsPort);
+    console.log('\x1b[35m%s\x1b[0m', 'The server is listening on port ' + config.httpsPort);
   });
 };
 

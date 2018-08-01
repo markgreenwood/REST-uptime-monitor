@@ -12,10 +12,11 @@ environments.staging = {
   envName: 'staging',
   hashingSecret: 'thisIsASecret',
   maxChecks: 5,
+  pingInterval: 5,
   twilio: {
-    accountSid: '',
-    authToken: '',
-    fromPhone: ''
+    accountSid: process.env.TWILIO_ACCT_ID,
+    authToken: process.env.TWILIO_AUTH_TOKEN,
+    fromPhone: '+1' + process.env.TWILIO_FROM_PHONE
   }
 };
 
@@ -26,10 +27,11 @@ environments.production = {
   envName: 'production',
   hashingSecret: 'thisIsAlsoASecret',
   maxChecks: 5,
+  pingInterval: 5,
   twilio: {
-    accountSid: '',
-    authToken: '',
-    fromPhone: ''
+    accountSid: process.env.TWILIO_ACCT_ID,
+    authToken: process.env.TWILIO_AUTH_TOKEN,
+    fromPhone: '+1' + process.env.TWILIO_FROM_PHONE
   }
 };
 
