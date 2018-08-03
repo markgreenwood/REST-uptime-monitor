@@ -20,7 +20,6 @@ handlers.notFound = (data, callback) => {
 
 handlers.users = function(data, callback) {
   const acceptableMethods = ['post', 'get', 'put', 'delete'];
-  console.log('data in handlers.users: ', data);
   if (acceptableMethods.indexOf(data.method) > -1) {
     handlers._users[data.method](data, callback);
   } else {
@@ -236,7 +235,6 @@ handlers._users.delete = function(data, callback) {
 
 handlers.tokens = function(data, callback) {
   const acceptableMethods = ['post', 'get', 'put', 'delete'];
-  console.log('data in handlers.tokens: ', data);
   if (acceptableMethods.indexOf(data.method) > -1) {
     handlers._tokens[data.method](data, callback);
   } else {
@@ -388,7 +386,6 @@ handlers._tokens.verifyToken = function(id, phone, callback) {
 
 handlers.checks = function(data, callback) {
   const acceptableMethods = ['post', 'get', 'put', 'delete'];
-  console.log('data in handlers.checks: ', data);
   if (acceptableMethods.indexOf(data.method) > -1) {
     handlers._checks[data.method](data, callback);
   } else {
