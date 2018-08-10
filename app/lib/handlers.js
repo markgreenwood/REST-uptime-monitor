@@ -10,6 +10,20 @@ const config = require('./config');
 // Define the handlers
 const handlers = {};
 
+/*
+ * HTML API handlers
+ */
+
+// Index handler
+handlers.index = (data, callback) => {
+  console.log('In handlers.index');
+  callback(undefined, undefined, 'html');
+};
+
+/*
+ * JSON API handlers
+ */
+
 handlers.ping = (data, callback) => {
   callback(200);
 };

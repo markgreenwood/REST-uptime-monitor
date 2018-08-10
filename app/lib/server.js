@@ -74,14 +74,24 @@ server.unifiedServer = function(req, res) {
       payload: helpers.parseJsonToObject(buffer)
     };
 
-    chosenHandler(data, (statusCode, payload) => {
+    chosenHandler(data, (statusCode, payload, contentType) => {
+      contentType = typeof(contentType) === 'string' ? contentType : 'json';
       statusCode = typeof(statusCode) === 'number' ? statusCode : 404;
-      payload = typeof(payload) === 'object' ? payload : {};
 
-      const payloadString = JSON.stringify(payload);
+      // Send the response parts that are content specific
+      let payloadString = '';
+      if (contentType == 'json') {
+        res.setHeader('Content-Type', 'application/json');
+        payload = typeof(payload) === 'object' ? payload : {};
+        payloadString = JSON.stringify(payload);
+      }
 
-      // Send the response
-      res.setHeader('Content-Type', 'application/json');
+      if (contentType == 'html') {
+        res.setHeader('Content-Type', 'text/html');
+        payloadString = typeof(payload) == 'string' ? payload : '';
+      }
+
+      // Send the response parts that are common
       res.writeHead(statusCode);
       res.end(payloadString);
 
