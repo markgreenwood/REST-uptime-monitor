@@ -44,7 +44,69 @@ handlers.index = (data, callback) => {
   } else {
     callback(405, undefined, 'html');
   }
-  // callback(200, undefined, 'html');
+};
+
+// Favicon
+handlers.favicon = (data, callback) => {
+  // Reject anything that isn't a GET
+  if (data.method == 'get') {
+    // Read in the favicon data
+    helpers.getStaticAsset('favicon.ico', (err, data) => {
+      if (!err && data) {
+        callback(200, data, 'favicon');
+      } else {
+        callback(500);
+      }
+    });
+  } else {
+    callback(405);
+  }
+};
+
+// Public assets
+handlers.public = (data, callback) => {
+  // Reject anything that isn't a GET
+  if (data.method == 'get') {
+    // Get the filename being requested
+    const trimmedAssetName = data.trimmedPath.replace('public/', '');
+
+    console.log('trimmedAssetName ', trimmedAssetName);
+
+    if (trimmedAssetName.length > 0) {
+      helpers.getStaticAsset(trimmedAssetName, (err, data) => {
+        if (!err && data) {
+          // Determine the content type, default to plain text
+          let contentType = 'plain';
+
+          if (trimmedAssetName.indexOf('.css') > -1) {
+            contentType = 'css';
+          }
+
+          if (trimmedAssetName.indexOf('.png') > -1) {
+            contentType = 'png';
+          }
+
+          if (trimmedAssetName.indexOf('.jpg') > -1) {
+            contentType = 'jpg';
+          }
+
+          if (trimmedAssetName.indexOf('.ico') > -1) {
+            contentType = 'favicon';
+          }
+
+          console.log('contentType ', contentType);
+
+          callback(200, data, contentType);
+        } else {
+          callback(404);
+        }
+      });
+    } else {
+      callback(404);
+    }
+  } else {
+    callback(405);
+  }
 };
 
 /*
