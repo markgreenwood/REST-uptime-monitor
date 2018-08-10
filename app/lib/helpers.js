@@ -14,7 +14,7 @@ const config = require('./config');
 // Container for helpers
 const helpers = {};
 
-helpers.hash = function(str) {
+helpers.hash = (str) => {
   if (typeof(str) == 'string' && str.length > 0) {
     const hash = crypto.createHmac('sha256', config.hashingSecret).update(str).digest('hex');
     return hash;
@@ -23,7 +23,7 @@ helpers.hash = function(str) {
   }
 };
 
-helpers.parseJsonToObject = function(str) {
+helpers.parseJsonToObject = (str) => {
   try {
     const obj = JSON.parse(str);
     return obj;
@@ -32,7 +32,7 @@ helpers.parseJsonToObject = function(str) {
   }
 };
 
-helpers.createRandomString = function(strLength) {
+helpers.createRandomString = (strLength) => {
   strLength = typeof(strLength) == 'number' && strLength > 0 ? strLength : false;
   if (strLength) {
     const possibleCharacters = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -55,7 +55,7 @@ helpers.createRandomString = function(strLength) {
   }
 }
 
-helpers.sendTwilioSms = function(phone, msg, callback) {
+helpers.sendTwilioSms = (phone, msg, callback) => {
   // Validate parameters
   phone = typeof(phone) == 'string' && phone.trim().length == 10 ? phone.trim(): false;
   msg = typeof(msg) == 'string' && msg.trim().length <= 1600 ? msg.trim() : false;
@@ -84,7 +84,7 @@ helpers.sendTwilioSms = function(phone, msg, callback) {
     };
 
     // Instantiate the request object
-    const req = https.request(requestDetails, function(res) {
+    const req = https.request(requestDetails, (res) => {
       // Grab status of sent request
       const status = res.statusCode;
 
@@ -97,7 +97,7 @@ helpers.sendTwilioSms = function(phone, msg, callback) {
     });
 
     // Bind to the error event so it doesn't get thrown
-    req.on('error', function(e) {
+    req.on('error', (e) => {
       callback(e);
     });
 
@@ -112,13 +112,16 @@ helpers.sendTwilioSms = function(phone, msg, callback) {
 };
 
 // Get the string content of a template
-helpers.getTemplate = function(templateName, callback) {
+helpers.getTemplate = (templateName, data, callback) => {
   templateName = typeof(templateName) == 'string' && templateName.length > 0 ? templateName : false;
+  data = typeof(data) == 'object' && data !== null ? data : {};
+
   if (templateName) {
     const templateDir = path.join(__dirname, '/../templates/');
-    fs.readFile(templateDir + templateName + '.html', 'utf8', function(err, str) {
+    fs.readFile(templateDir + templateName + '.html', 'utf8', (err, str) => {
       if (!err && str && str.length > 0) {
-        callback(false, str);
+        const finalStr = helpers.interpolate(str, data);
+        callback(false, finalStr);
       } else {
         callback('No template found');
       }
@@ -126,7 +129,54 @@ helpers.getTemplate = function(templateName, callback) {
   } else {
     callback('A valid template name was not specified');
   }
-}
+};
+
+// Add the universal header and footer to a string and pass provided data object to header and footer for interpolation
+helpers.addUniversalTemplates = (str, data, callback) => {
+  str = typeof(str) == 'string' && str.length > 0 ? str : '';
+  data = typeof(data) == 'object' && data !== null ? data : {};
+
+  // Get the header
+  helpers.getTemplate('_header', data, (err, headerString) => {
+    if (!err && headerString) {
+      helpers.getTemplate('_footer', data, (err, footerString) => {
+        if (!err && footerString) {
+          const fullString = headerString + str + footerString;
+          callback(false, fullString);
+        } else {
+          callback('Could not find footer template');
+        }
+      })
+
+    } else {
+      callback('Could not find header template');
+    }
+  })
+};
+
+// Take a given string and a data object and find/replace all the keys within it
+helpers.interpolate = (str, data) => {
+  str = typeof(str) == 'string' && str.length > 0 ? str : '';
+  data = typeof(data) == 'object' && data !== null ? data : {};
+
+  // Add template globals to the data object prepending their key name with 'global'
+  for (let keyName in config.templateGlobals) {
+    if (config.templateGlobals.hasOwnProperty(keyName)) {
+      data['global.' + keyName] = config.templateGlobals[keyName];
+    }
+  }
+
+  // For each key in data object, insert its value into the string at the corresponding placeholder
+  for (let key in data) {
+    if (data.hasOwnProperty(key) && typeof(data[key]) == 'string') {
+      const replace = data[key];
+      const find = '{' + key + '}';
+      str = str.replace(find, replace);
+    }
+  }
+
+  return str;
+};
 
 // Export
 module.exports = helpers;
