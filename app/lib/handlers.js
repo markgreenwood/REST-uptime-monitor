@@ -16,8 +16,20 @@ const handlers = {};
 
 // Index handler
 handlers.index = (data, callback) => {
-  console.log('In handlers.index');
-  callback(undefined, undefined, 'html');
+  // Reject any request that isn't a GET
+  if (data.method == 'get') {
+    // Send in a template as a string
+    helpers.getTemplate('index', (err, str) => {
+      if (!err && str) {
+        callback(200, str, 'html');
+      } else {
+        callback(500, undefined, 'html');
+      }
+    });
+  } else {
+    callback(405, undefined, 'html');
+  }
+  // callback(200, undefined, 'html');
 };
 
 /*
