@@ -447,7 +447,7 @@ handlers._tokens.put = function(data, callback) {
 // Required data: id
 // Optional data: none
 handlers._tokens.delete = function(data, callback) {
-  // Check that phone is valid
+  // Check that id is valid
   const id = (typeof(data.queryStringObject.id) == 'string' && data.queryStringObject.id.trim().length == 20) ? data.queryStringObject.id.trim() : false;
 
   if (id) {
