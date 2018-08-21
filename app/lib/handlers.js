@@ -20,14 +20,75 @@ handlers.index = (data, callback) => {
   if (data.method == 'get') {
     // Prepare data for interpolation
     const templateData = {
-      'head.title': 'This is the title',
-      'head.description': 'This is the meta description',
-      'body.title': 'Hello templated world!',
+      'head.title': 'Uptime Monitoring - Made Simple',
+      'head.description': 'We offer free uptime monitoring for HTTP/HTTPS sites of all kinds. When your site goes down, we\'ll send you a text to let you know',
       'body.class': 'index'
     };
 
     // Read in a template as a string
     helpers.getTemplate('index', templateData, (err, str) => {
+      if (!err && str) {
+        // Add the universal templates
+        helpers.addUniversalTemplates(str, templateData, (err, str) => {
+          if (!err && str) {
+            callback(200, str, 'html');
+          } else {
+            callback(500, undefined, 'html');
+          }
+        });
+      } else {
+        callback(500, undefined, 'html');
+      }
+    });
+  } else {
+    callback(405, undefined, 'html');
+  }
+};
+
+// Create account handler
+handlers.accountCreate = (data, callback) => {
+  // Reject any request that isn't a GET
+  if (data.method == 'get') {
+    // Prepare data for interpolation
+    const templateData = {
+      'head.title': 'Create an Account',
+      'head.description': 'Signup is easy and only takes a few seconds',
+      'body.class': 'accountCreate'
+    };
+
+    // Read in a template as a string
+    helpers.getTemplate('accountCreate', templateData, (err, str) => {
+      if (!err && str) {
+        // Add the universal templates
+        helpers.addUniversalTemplates(str, templateData, (err, str) => {
+          if (!err && str) {
+            callback(200, str, 'html');
+          } else {
+            callback(500, undefined, 'html');
+          }
+        });
+      } else {
+        callback(500, undefined, 'html');
+      }
+    });
+  } else {
+    callback(405, undefined, 'html');
+  }
+};
+
+// Create new session
+handlers.sessionCreate = (data, callback) => {
+  // Reject any request that isn't a GET
+  if (data.method == 'get') {
+    // Prepare data for interpolation
+    const templateData = {
+      'head.title': 'Login to Your Account',
+      'head.description': 'Please enter your phone number and password to access your account',
+      'body.class': 'sessionCreate'
+    };
+
+    // Read in a template as a string
+    helpers.getTemplate('sessionCreate', templateData, (err, str) => {
       if (!err && str) {
         // Add the universal templates
         helpers.addUniversalTemplates(str, templateData, (err, str) => {
